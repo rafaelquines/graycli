@@ -21,8 +21,8 @@ export class GrayCli {
     }
     if (cmdOptions.apiUrl) {
       cmdOptions = this.parseUrl(cmdOptions);
-      this.cmdOptions = cmdOptions;
     }
+    this.cmdOptions = cmdOptions;
     if (cmdOptions.save) {
       this.saveToConfig(cmdOptions);
     } else if (cmdOptions.config) {
