@@ -4,7 +4,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const commander = require("commander");
 const graycli_1 = require("./graycli");
 commander
-    .version('0.0.10', '-v, --version')
+    .version('0.0.11', '-v, --version')
     .option('--api-url <api_url>', 'Full Graylog Api URL')
     .option('--api-host <host>', 'Graylog API Hostname', "127.0.0.1")
     .option('--api-port <port>', 'Graylog API Port', '9000')

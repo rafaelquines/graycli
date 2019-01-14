@@ -84,7 +84,7 @@ class GrayCli {
         if (this.cmdOptions.debug) {
             console.debug("Calling searchRelative...");
         }
-        graylogApi.searchRelative('*', this.cmdOptions.range, undefined, undefined, "streams:" + streamId, '_id,timestamp,container_name,message,source', 'timestamp:asc')
+        graylogApi.searchRelative('*', this.cmdOptions.range, 500, undefined, "streams:" + streamId, '_id,timestamp,container_name,message,source', 'timestamp:asc')
             .then((res) => {
             if (this.cmdOptions.debug) {
                 console.debug("Response searchRelative (" + res.messages.length + " messages)");
