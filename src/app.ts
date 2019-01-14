@@ -5,9 +5,8 @@ import { UserConfig } from './models/user-config';
 import * as commander from 'commander';
 import * as rp from 'request-promise';
 import * as fs from 'fs';
-import { GLog } from './glog';
+import { GrayCli } from './graycli';
 
-// const version = require('../package.json').version;
 commander
   .version('0.0.1', '-v, --version')
   .option('--api-host <host>', 'Graylog API Hostname', "127.0.0.1")
@@ -22,5 +21,5 @@ commander
   .option('-c, --config <config_name>', 'Load saved config')
   .parse(process.argv);
 
-const gLog = new GLog(commander);
-gLog.start();
+const grayCli = new GrayCli(commander);
+grayCli.start();

@@ -2,14 +2,20 @@ import { FileUtils } from "./lib/file-utils";
 import { GraylogApi } from "./services/graylog-api.service";
 import { UserConfig } from "./models/user-config";
 import { CommanderStatic } from "commander";
+import * as Bluebird from 'bluebird';
 
-export class GLog {
-  private readonly configDir = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'] + '/.glog';
+export class GrayCli {
+  private readonly configDir = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'] + '/.graycli';
   private readonly configFilename = this.configDir + '/config.json';
   messageIds: string[] = [];
   cmdOptions: any;
 
   constructor(cmdOptions: CommanderStatic) {
+    // console.log(process.argv);
+    if (process.argv.length <= 2) {
+      cmdOptions.outputHelp();
+      process.exit(0);
+    }
     this.cmdOptions = cmdOptions;
     if (cmdOptions.save) {
       this.saveToConfig(cmdOptions);
@@ -34,7 +40,7 @@ export class GLog {
     FileUtils.createConfigDir(this.configDir);
     const configs: UserConfig[] = FileUtils.readConfigFile(this.configFilename);
     let currentConfig = configs.find((x) => x.name === cmdOptions.save);
-    if(currentConfig) {
+    if (currentConfig) {
       currentConfig.apiHost = cmdOptions.apiHost;
       currentConfig.apiPort = cmdOptions.apiPort;
       currentConfig.apiPath = cmdOptions.apiPath;
@@ -81,7 +87,30 @@ export class GLog {
     const graylogApi: GraylogApi = new GraylogApi(this.cmdOptions.apiProtocol + "://"
       + this.cmdOptions.apiHost + ":" + this.cmdOptions.apiPort + this.cmdOptions.apiPath,
       this.cmdOptions.username, this.cmdOptions.password);
-    this.callApi(graylogApi);
+    this.showServerInfo(graylogApi)
+      .then(() => {
+        this.callApi(graylogApi);
+      });
+  }
+
+  showServerInfo(graylogApi: GraylogApi) {
+    return graylogApi.system()
+      .then((serverInfo) => {
+        console.log("Graylog Server Info:");
+        console.log("    Hostname: " + serverInfo.hostname);
+        console.log("    Version: " + serverInfo.version);
+        console.log("    OS: " + serverInfo.operating_system);
+        console.log("    Status: " + serverInfo.lb_status);
+        console.log("    Start At: " + serverInfo.started_at);
+        console.log("    Cluster Id: " + serverInfo.cluster_id);
+        console.log("    Node Id: " + serverInfo.node_id);
+        return Promise.resolve();
+      })
+      .catch((err) => {
+        console.log(err);
+        console.log("Error: " + err.statusCode);
+        process.exit(1);
+      });
   }
 
   handleMessages(messages: any[], filter: string): Promise<any> {
