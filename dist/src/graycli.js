@@ -101,6 +101,7 @@ class GrayCli {
         return graylogApi.streams()
             .then((streams) => {
             if (streams.streams.length === 1) {
+                console.log("Monitoring stream " + streams.streams[0].title + "...");
                 return Promise.resolve({ stream: streams.streams[0].id });
             }
             else {
