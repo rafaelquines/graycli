@@ -8,4 +8,5 @@ export interface UserConfig {
     interval: number;
     filter?: string;
     name: string;
+    range: number;
 }

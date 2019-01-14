@@ -27,6 +27,10 @@ export class GrayCli {
       this.saveToConfig(cmdOptions);
     } else if (cmdOptions.config) {
       this.cmdOptions = this.getConfig(cmdOptions.config);
+      if (cmdOptions.filter) {
+        this.cmdOptions.filter = cmdOptions.filter;
+        this.cmdOptions.debug = cmdOptions.debug;
+      }
     }
   }
 
@@ -64,6 +68,7 @@ export class GrayCli {
       currentConfig.password = cmdOptions.password;
       currentConfig.interval = cmdOptions.interval;
       currentConfig.filter = cmdOptions.filter;
+      currentConfig.range = cmdOptions.range;
     } else {
       currentConfig = {
         apiHost: cmdOptions.apiHost,
@@ -74,7 +79,8 @@ export class GrayCli {
         password: cmdOptions.password,
         interval: cmdOptions.interval,
         filter: cmdOptions.filter,
-        name: cmdOptions.save
+        name: cmdOptions.save,
+        range: cmdOptions.range
       };
       configs.push(currentConfig);
     }
@@ -82,9 +88,15 @@ export class GrayCli {
   }
 
   private callApi(graylogApi: GraylogApi, streamId: string) {
-    graylogApi.searchRelative('*', 10, undefined, undefined, "streams:" + streamId, '_id,timestamp,container_name,message,source',
+    if(this.cmdOptions.debug) {
+      console.debug("Calling searchRelative...");
+    }
+    graylogApi.searchRelative('*', this.cmdOptions.range, undefined, undefined, "streams:" + streamId, '_id,timestamp,container_name,message,source',
       'timestamp:asc')
       .then((res) => {
+        if(this.cmdOptions.debug) {
+          console.debug("Response searchRelative (" + res.messages.length + " messages)");
+        }
         return this.handleMessages(res.messages, this.cmdOptions.filter);
       })
       .then(() => {
@@ -159,6 +171,9 @@ export class GrayCli {
       return item.message._id;
     }) as string[];
     const diffIds: string[] = msgIds.filter((x) => !this.messageIds.includes(x));
+    if(this.cmdOptions.debug) {
+      console.debug("New messages: " + diffIds.length);
+    }
     this.messageIds = [...this.messageIds, ...diffIds];
     messages.filter((x) => diffIds.includes(x.message._id))
       .forEach(el => {

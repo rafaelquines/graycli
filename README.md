@@ -34,6 +34,7 @@ graycli usage:
       -u, --username TEXT         Graylog API Username
       -p, --password TEXT         Graylog API Password
       -i, --interval INTEGER      Polling interval in seconds (default: 3)
+      -r, --range INTEGER         Relative timerange, specified as seconds from now (default: 60)
       -f, --filter TEXT           Search string
       -s, --save TEXT             Save config
       -c, --config TEXT           Load saved config
