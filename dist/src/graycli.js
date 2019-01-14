@@ -16,12 +16,12 @@ class GrayCli {
         if (cmdOptions.apiUrl) {
             cmdOptions = this.parseUrl(cmdOptions);
             this.cmdOptions = cmdOptions;
-            if (cmdOptions.save) {
-                this.saveToConfig(cmdOptions);
-            }
-            else if (cmdOptions.config) {
-                this.cmdOptions = this.getConfig(cmdOptions.config);
-            }
+        }
+        if (cmdOptions.save) {
+            this.saveToConfig(cmdOptions);
+        }
+        else if (cmdOptions.config) {
+            this.cmdOptions = this.getConfig(cmdOptions.config);
         }
     }
     parseUrl(cmdOptions) {
