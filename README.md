@@ -1,6 +1,6 @@
 # graycli
 
-`graycli` is a command line internface to query Graylog via the REST API. It tries emulate the \"docker logs -f\" behavior.
+`graycli` is a command line interface to query Graylog via the REST API. It tries emulate the \"docker logs -f\" behavior.
 
 Installation
 ============
