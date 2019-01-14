@@ -1,14 +1,9 @@
 #!/usr/bin/env node
-import { GraylogApi } from './services/graylog-api.service';
-import { FileUtils } from './lib/file-utils';
-import { UserConfig } from './models/user-config';
 import * as commander from 'commander';
-import * as rp from 'request-promise';
-import * as fs from 'fs';
 import { GrayCli } from './graycli';
 
 commander
-  .version('0.0.1', '-v, --version')
+  .version('0.0.2', '-v, --version')
   .option('--api-host <host>', 'Graylog API Hostname', "127.0.0.1")
   .option('--api-port <port>', 'Graylog API Port', '9000')
   .option('--api-path <path>', 'Graylog API Path', "/api/")

@@ -107,7 +107,6 @@ export class GrayCli {
         return Promise.resolve();
       })
       .catch((err) => {
-        console.log(err);
         console.log("Error: " + err.statusCode);
         process.exit(1);
       });
