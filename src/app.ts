@@ -3,7 +3,8 @@ import * as commander from 'commander';
 import { GrayCli } from './graycli';
 
 commander
-  .version('0.0.2', '-v, --version')
+  .version('0.0.3', '-v, --version')
+  .option('--api-url <api_url>', 'Full Graylog Api URL')
   .option('--api-host <host>', 'Graylog API Hostname', "127.0.0.1")
   .option('--api-port <port>', 'Graylog API Port', '9000')
   .option('--api-path <path>', 'Graylog API Path', "/api/")

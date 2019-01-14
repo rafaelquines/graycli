@@ -3,6 +3,7 @@ import * as rp from 'request-promise';
 export class GraylogApi {
   private readonly searchRelativeApi = "search/universal/relative";
   private readonly systemApi = "system";
+  private readonly streamsApi = "streams";
   private readonly basicAuthToken: string;
   constructor(private graylogUrlApi: string, private username: string, private password: string) {
     this.basicAuthToken = "Basic " + Buffer.from(this.username + ":" + this.password).toString('base64');
@@ -13,9 +14,10 @@ export class GraylogApi {
       qs: {
         query,
         range,
-        // fields: '_id,timestamp,container_name,message,source',
+        limit,
+        offset,
+        filter,
         fields,
-        // sort: 'timestamp:asc'
         sort
       },
       json: true,
@@ -29,6 +31,17 @@ export class GraylogApi {
   system() {
     const options: rp.Options = {
       url: this.graylogUrlApi + this.systemApi,
+      json: true,
+      headers: {
+        Authorization: this.basicAuthToken
+      }
+    };
+    return rp(options);
+  }
+
+  streams() {
+    const options: rp.Options = {
+      url: this.graylogUrlApi + this.streamsApi,
       json: true,
       headers: {
         Authorization: this.basicAuthToken

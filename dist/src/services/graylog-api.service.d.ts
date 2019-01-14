@@ -5,8 +5,10 @@ export declare class GraylogApi {
     private password;
     private readonly searchRelativeApi;
     private readonly systemApi;
+    private readonly streamsApi;
     private readonly basicAuthToken;
     constructor(graylogUrlApi: string, username: string, password: string);
     searchRelative(query: string, range: number, limit?: number, offset?: number, filter?: string, fields?: string, sort?: string): rp.RequestPromise;
     system(): rp.RequestPromise;
+    streams(): rp.RequestPromise;
 }

@@ -8,6 +8,7 @@ class GraylogApi {
         this.password = password;
         this.searchRelativeApi = "search/universal/relative";
         this.systemApi = "system";
+        this.streamsApi = "streams";
         this.basicAuthToken = "Basic " + Buffer.from(this.username + ":" + this.password).toString('base64');
     }
     searchRelative(query, range, limit, offset, filter, fields, sort) {
@@ -16,9 +17,10 @@ class GraylogApi {
             qs: {
                 query,
                 range,
-                // fields: '_id,timestamp,container_name,message,source',
+                limit,
+                offset,
+                filter,
                 fields,
-                // sort: 'timestamp:asc'
                 sort
             },
             json: true,
@@ -31,6 +33,16 @@ class GraylogApi {
     system() {
         const options = {
             url: this.graylogUrlApi + this.systemApi,
+            json: true,
+            headers: {
+                Authorization: this.basicAuthToken
+            }
+        };
+        return rp(options);
+    }
+    streams() {
+        const options = {
+            url: this.graylogUrlApi + this.streamsApi,
             json: true,
             headers: {
                 Authorization: this.basicAuthToken
