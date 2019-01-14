@@ -29,8 +29,8 @@ export class GrayCli {
       this.cmdOptions = this.getConfig(cmdOptions.config);
       if (cmdOptions.filter) {
         this.cmdOptions.filter = cmdOptions.filter;
-        this.cmdOptions.debug = cmdOptions.debug;
       }
+      this.cmdOptions.debug = cmdOptions.debug;
     }
   }
 
