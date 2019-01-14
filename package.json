@@ -1,14 +1,29 @@
 {
   "name": "graycli",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
   "files": [
     "dist/src"
   ],
-  "license": "Apache-2.0",
-  "keywords": [],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rafaelquines/graycli.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rafaelquines/graycli/issues"
+  },
+  "homepage": "https://github.com/rafaelquines/graycli",
+  "author": "Rafael Quines <rafaelquines@gmail.com>",
+  "license": "MIT",
+  "keywords": [
+    "graylog",
+    "docker",
+    "container",
+    "api",
+    "rest"
+  ],
   "preferGlobal": true,
   "bin": "./dist/src/app.js",
   "scripts": {
