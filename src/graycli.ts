@@ -31,6 +31,7 @@ export class GrayCli {
         this.cmdOptions.filter = cmdOptions.filter;
       }
       this.cmdOptions.debug = cmdOptions.debug;
+      this.cmdOptions.range = cmdOptions.range || 60;
     }
   }
 
