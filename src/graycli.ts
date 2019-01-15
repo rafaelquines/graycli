@@ -175,24 +175,33 @@ export class GrayCli {
       .then((streams: Streams) => {
         if (streams.streams.length === 1) {
           console.log("Monitoring stream " + streams.streams[0].title + "...");
-          return Promise.resolve({ stream: streams.streams[0].id });
+          return Promise.resolve({ stream: streams.streams[0].id + "#:#" + streams.streams[0].title });
         } else {
           const streamList: InquirerListItem[] = streams.streams.map((s) => {
-            return { name: s.title + " (" + s.description + ")", value: s };
+            return { name: s.title + " (" + s.description + ")", value: s.id + "#:#" + s.title };
           });
           return inquirer.prompt({
             name: 'stream',
             type: 'list',
             choices: streamList,
-            message: 'Select stream:'
+            message: 'Select stream:',
+            default: this.cache.stream
           });
         }
       })
       .then((answer: any) => {
-        console.log("Monitoring stream " + answer.stream.title + "...");
-        return Promise.resolve(answer.stream.id);
+        const splitStream: string[] = answer.stream.split("#:#");
+        const streamId = splitStream[0];
+        const title = splitStream[1];
+        console.log("Monitoring stream " + title + "...");
+        this.cache.stream = answer.stream;
+        FileUtils.writeCacheFile(this.cacheFilename, this.cache);
+        return Promise.resolve(streamId);
       })
-      .catch((err) => this.showError(err));
+      .catch((err) => {
+        this.showError(err);
+        return "";
+      });
   }
 
   private showError(err: any) {
