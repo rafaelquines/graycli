@@ -23,7 +23,7 @@ export declare class GrayCli {
     private validatePassword;
     collectInputs(): Promise<void>;
     start(): void;
-    listStreams(graylogApi: GraylogApi): Bluebird<any>;
+    listStreams(graylogApi: GraylogApi): Bluebird<string>;
     private showError;
     showServerInfo(graylogApi: GraylogApi): Bluebird<void>;
     handleMessages(messages: any[], filter: string): Promise<any>;
