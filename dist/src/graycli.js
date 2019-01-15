@@ -1,91 +1,39 @@
 "use strict";
+var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    return new (P || (P = Promise))(function (resolve, reject) {
+        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
+        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        step((generator = generator.apply(thisArg, _arguments || [])).next());
+    });
+};
 Object.defineProperty(exports, "__esModule", { value: true });
+const url_utils_1 = require("./lib/url-utils");
 const file_utils_1 = require("./lib/file-utils");
 const graylog_api_service_1 = require("./services/graylog-api.service");
 const inquirer = require("inquirer");
-const Url = require("url-parse");
+const sprintf_js_1 = require("sprintf-js");
 class GrayCli {
     constructor(cmdOptions) {
-        this.configDir = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'] + '/.graycli';
-        this.configFilename = this.configDir + '/config.json';
+        this.userDir = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'] + '/.graycli';
+        this.tokenFilename = this.userDir + '/tokens.json';
+        this.cacheFilename = this.userDir + '/cache.json';
+        this.authHeaderFormat = "Basic %(token)s";
         this.messageIds = [];
-        if (process.argv.length <= 2) {
-            cmdOptions.outputHelp();
-            process.exit(0);
-        }
-        if (cmdOptions.apiUrl) {
-            cmdOptions = this.parseUrl(cmdOptions);
-        }
+        this.url = '';
+        this.username = '';
+        this.password = '';
+        this.cache = {};
+        this.authHeader = '';
         this.cmdOptions = cmdOptions;
-        if (cmdOptions.save) {
-            this.saveToConfig(cmdOptions);
-        }
-        else if (cmdOptions.config) {
-            this.cmdOptions = this.getConfig(cmdOptions.config);
-            if (cmdOptions.filter) {
-                this.cmdOptions.filter = cmdOptions.filter;
-            }
-            this.cmdOptions.debug = cmdOptions.debug;
-            this.cmdOptions.range = cmdOptions.range || 60;
-        }
-    }
-    parseUrl(cmdOptions) {
-        const url = new Url(cmdOptions.apiUrl);
-        cmdOptions.apiHost = url.hostname;
-        cmdOptions.apiProtocol = url.protocol.replace(":", "");
-        cmdOptions.apiPath = url.pathname.endsWith("/") ? url.pathname : url.pathname + "/";
-        cmdOptions.apiPort = url.port || (cmdOptions.apiProtocol === 'https' ? 443 : 80);
-        return cmdOptions;
-    }
-    getConfig(name) {
-        const configs = file_utils_1.FileUtils.readConfigFile(this.configFilename);
-        const config = configs.find(x => x.name === name);
-        if (config) {
-            return config;
-        }
-        else {
-            console.log("Config " + name + " not found");
-            process.exit(1);
-            return null;
-        }
-    }
-    saveToConfig(cmdOptions) {
-        file_utils_1.FileUtils.createConfigDir(this.configDir);
-        const configs = file_utils_1.FileUtils.readConfigFile(this.configFilename);
-        let currentConfig = configs.find((x) => x.name === cmdOptions.save);
-        if (currentConfig) {
-            currentConfig.apiHost = cmdOptions.apiHost;
-            currentConfig.apiPort = cmdOptions.apiPort;
-            currentConfig.apiPath = cmdOptions.apiPath;
-            currentConfig.apiProtocol = cmdOptions.apiProtocol;
-            currentConfig.username = cmdOptions.username;
-            currentConfig.password = cmdOptions.password;
-            currentConfig.interval = cmdOptions.interval;
-            currentConfig.filter = cmdOptions.filter;
-            currentConfig.range = cmdOptions.range;
-        }
-        else {
-            currentConfig = {
-                apiHost: cmdOptions.apiHost,
-                apiPort: cmdOptions.apiPort,
-                apiPath: cmdOptions.apiPath,
-                apiProtocol: cmdOptions.apiProtocol,
-                username: cmdOptions.username,
-                password: cmdOptions.password,
-                interval: cmdOptions.interval,
-                filter: cmdOptions.filter,
-                name: cmdOptions.save,
-                range: cmdOptions.range
-            };
-            configs.push(currentConfig);
-        }
-        file_utils_1.FileUtils.writeConfigFile(this.configFilename, configs);
+        this.tokens = file_utils_1.FileUtils.readTokenFile(this.tokenFilename);
+        this.cache = file_utils_1.FileUtils.readCacheFile(this.cacheFilename);
     }
     callApi(graylogApi, streamId) {
         if (this.cmdOptions.debug) {
             console.debug("Calling searchRelative...");
         }
-        graylogApi.searchRelative('*', this.cmdOptions.range, 500, undefined, "streams:" + streamId, '_id,timestamp,container_name,message,source', 'timestamp:asc')
+        graylogApi.searchRelative('*', this.cmdOptions.range, 500, undefined, "streams:" + streamId, '_id,timestamp,container_name,message,source', 'timestamp:asc', this.cmdOptions.debug)
             .then((res) => {
             if (this.cmdOptions.debug) {
                 console.debug("Response searchRelative (" + res.messages.length + " messages)");
@@ -99,11 +47,114 @@ class GrayCli {
         })
             .catch((err) => this.showError(err));
     }
+    validateUrl(url) {
+        return Promise.resolve(url_utils_1.UrlUtils.isAccessible(url));
+    }
+    validateRequired(value) {
+        return value ? true : "Invalid";
+    }
+    validatePassword(password) {
+        if (!password) {
+            return "Invalid password";
+        }
+        else {
+            const graylogApi = new graylog_api_service_1.GraylogApi(this.url, sprintf_js_1.sprintf(this.authHeaderFormat, { token: Buffer.from(this.username + ":" + password).toString('base64') }));
+            return Promise.resolve(graylogApi.system())
+                .then(() => {
+                return true;
+            }).catch(() => {
+                return "Invalid username or password";
+            });
+        }
+    }
+    collectInputs() {
+        return __awaiter(this, void 0, void 0, function* () {
+            this.url = this.cmdOptions.url;
+            this.username = this.cmdOptions.username;
+            // URL
+            if (!this.url) {
+                const urlAnswer = yield inquirer.prompt({
+                    name: "url",
+                    type: "input",
+                    message: "Graylog URL:",
+                    validate: (inp) => this.validateUrl(inp),
+                    default: this.cache.url
+                });
+                this.url = urlAnswer.url.endsWith("/") ? urlAnswer.url.substr(0, urlAnswer.url.length - 1) : urlAnswer.url;
+            }
+            else {
+                this.url = this.url.endsWith("/") ? this.url.substr(0, this.url.length - 1) : this.url;
+                const urlValid = yield this.validateUrl(this.url);
+                if (urlValid !== true) {
+                    this.showError("Invalid Graylog Url");
+                }
+            }
+            this.cache.url = this.url;
+            file_utils_1.FileUtils.writeCacheFile(this.cacheFilename, this.cache);
+            // Username
+            if (!this.username) {
+                const usernameAnswer = yield inquirer.prompt({
+                    name: "username",
+                    type: "input",
+                    message: "Username:",
+                    validate: (inp) => this.validateRequired(inp),
+                    default: this.cache.username
+                });
+                this.username = usernameAnswer.username;
+                this.cache.username = this.username;
+            }
+            this.cache.username = this.username;
+            file_utils_1.FileUtils.writeCacheFile(this.cacheFilename, this.cache);
+            // Token
+            const token = this.tokens.find((x) => x.username === this.username && x.url === this.url);
+            if (!token) {
+                const passwordAnswer = yield inquirer.prompt({
+                    name: 'password',
+                    type: 'password',
+                    message: 'Password:',
+                    validate: (inp) => this.validatePassword(inp),
+                    mask: '*'
+                });
+                this.password = passwordAnswer.password;
+                const wantTokenAnswer = yield inquirer.prompt({
+                    name: 'wantToken',
+                    type: 'confirm',
+                    message: 'Do you want generate a token?'
+                });
+                if (wantTokenAnswer.wantToken) {
+                    const graylogApi = new graylog_api_service_1.GraylogApi(this.url, sprintf_js_1.sprintf(this.authHeaderFormat, { token: Buffer.from(this.username + ":" + this.password).toString('base64') }));
+                    try {
+                        const tokenRes = yield graylogApi.createToken(this.username, "graycli");
+                        if (tokenRes.token) {
+                            console.log("Token successfully generated");
+                        }
+                        this.tokens.push({
+                            url: this.url,
+                            username: this.username,
+                            token: tokenRes.token
+                        });
+                        file_utils_1.FileUtils.writeTokenFile(this.tokenFilename, this.tokens);
+                        this.authHeader = sprintf_js_1.sprintf(this.authHeaderFormat, { token: Buffer.from(tokenRes.token + ":token").toString('base64') });
+                    }
+                    catch (e) {
+                        console.log("Could not generate token");
+                        this.authHeader = sprintf_js_1.sprintf(this.authHeaderFormat, { token: Buffer.from(this.username + ":" + this.password).toString('base64') });
+                    }
+                }
+                else {
+                    this.authHeader = sprintf_js_1.sprintf(this.authHeaderFormat, { token: Buffer.from(this.username + ":" + this.password).toString('base64') });
+                }
+            }
+            else {
+                this.authHeader = sprintf_js_1.sprintf(this.authHeaderFormat, { token: Buffer.from(token.token + ":token").toString('base64') });
+            }
+        });
+    }
     start() {
-        const graylogApi = new graylog_api_service_1.GraylogApi(this.cmdOptions.apiProtocol + "://"
-            + this.cmdOptions.apiHost + ":" + this.cmdOptions.apiPort + this.cmdOptions.apiPath, this.cmdOptions.username, this.cmdOptions.password);
-        this.showServerInfo(graylogApi)
+        let graylogApi;
+        this.collectInputs()
             .then(() => {
+            graylogApi = new graylog_api_service_1.GraylogApi(this.url, this.authHeader);
             return this.listStreams(graylogApi);
         })
             .then((streamId) => {
@@ -119,7 +170,7 @@ class GrayCli {
             }
             else {
                 const streamList = streams.streams.map((s) => {
-                    return { name: s.title + " (" + s.description + ")", value: s.id };
+                    return { name: s.title + " (" + s.description + ")", value: s };
                 });
                 return inquirer.prompt({
                     name: 'stream',
@@ -130,7 +181,8 @@ class GrayCli {
             }
         })
             .then((answer) => {
-            return Promise.resolve(answer.stream);
+            console.log("Monitoring stream " + answer.stream.title + "...");
+            return Promise.resolve(answer.stream.id);
         })
             .catch((err) => this.showError(err));
     }

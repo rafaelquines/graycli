@@ -5,17 +5,36 @@ class FileUtils {
     static exists(path) {
         return fs.existsSync(path);
     }
-    static writeConfigFile(path, configs) {
-        fs.writeFileSync(path, JSON.stringify(configs, undefined, 2));
+    static writeTokenFile(path, tokens) {
+        fs.writeFileSync(path, JSON.stringify(tokens, undefined, 2));
     }
-    static readConfigFile(path) {
+    static writeCacheFile(path, cache) {
+        fs.writeFileSync(path, JSON.stringify(cache, undefined, 2));
+    }
+    static readJsonFile(path) {
+        if (FileUtils.exists(path)) {
+            const rawdata = fs.readFileSync(path);
+            return JSON.parse(rawdata.toString());
+        }
+        else {
+            return null;
+        }
+    }
+    static readCacheFile(path) {
         if (!FileUtils.exists(path)) {
-            FileUtils.writeConfigFile(path, []);
+            FileUtils.writeCacheFile(path, {});
         }
         const rawdata = fs.readFileSync(path);
         return JSON.parse(rawdata.toString());
     }
-    static createConfigDir(path) {
+    static readTokenFile(path) {
+        if (!FileUtils.exists(path)) {
+            FileUtils.writeTokenFile(path, []);
+        }
+        const rawdata = fs.readFileSync(path);
+        return JSON.parse(rawdata.toString());
+    }
+    static createUserDir(path) {
         if (!FileUtils.exists(path)) {
             fs.mkdirSync(path);
         }

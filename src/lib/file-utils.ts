@@ -1,5 +1,6 @@
 import * as fs from 'fs';
-import { UserConfig } from '../models/user-config';
+import { UserToken } from '../models/user-token';
+import { UserCache } from '../models/user-cache';
 
 export class FileUtils {
 
@@ -7,19 +8,41 @@ export class FileUtils {
     return fs.existsSync(path);
   }
 
-  static writeConfigFile(path: string, configs: UserConfig[]) {
-    fs.writeFileSync(path, JSON.stringify(configs, undefined, 2));
+  static writeTokenFile(path: string, tokens: UserToken[]) {
+    fs.writeFileSync(path, JSON.stringify(tokens, undefined, 2));
   }
 
-  static readConfigFile(path: string) {
+  static writeCacheFile(path: string, cache: UserCache) {
+    fs.writeFileSync(path, JSON.stringify(cache, undefined, 2));
+  }
+
+  static readJsonFile(path: string) {
+    if (FileUtils.exists(path)) {
+      const rawdata = fs.readFileSync(path);
+      return JSON.parse(rawdata.toString());
+    }
+    else {
+      return null;
+    }
+  }
+
+  static readCacheFile(path: string) {
     if (!FileUtils.exists(path)) {
-      FileUtils.writeConfigFile(path, []);
+      FileUtils.writeCacheFile(path, {});
     }
     const rawdata = fs.readFileSync(path);
-    return JSON.parse(rawdata.toString()) as UserConfig[];
+    return JSON.parse(rawdata.toString()) as UserCache;
   }
 
-  static createConfigDir(path: string) {
+  static readTokenFile(path: string) {
+    if (!FileUtils.exists(path)) {
+      FileUtils.writeTokenFile(path, []);
+    }
+    const rawdata = fs.readFileSync(path);
+    return JSON.parse(rawdata.toString()) as UserToken[];
+  }
+
+  static createUserDir(path: string) {
     if (!FileUtils.exists(path)) {
       fs.mkdirSync(path);
     }

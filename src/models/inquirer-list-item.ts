@@ -1,4 +1,4 @@
 export interface InquirerListItem {
   name: string;
-  value: string;
+  value: string | any;
 }

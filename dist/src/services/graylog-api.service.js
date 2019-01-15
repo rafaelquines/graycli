@@ -1,17 +1,40 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 const rp = require("request-promise");
+const sprintf_js_1 = require("sprintf-js");
 class GraylogApi {
-    constructor(graylogUrlApi, username, password) {
-        this.graylogUrlApi = graylogUrlApi;
-        this.username = username;
-        this.password = password;
-        this.searchRelativeApi = "search/universal/relative";
-        this.systemApi = "system";
-        this.streamsApi = "streams";
-        this.basicAuthToken = "Basic " + Buffer.from(this.username + ":" + this.password).toString('base64');
+    constructor(graylogUrl, authHeader) {
+        this.authHeader = authHeader;
+        this.searchRelativeApi = "/search/universal/relative";
+        this.systemApi = "/system";
+        this.streamsApi = "/streams";
+        this.listTokensApi = "/users/%(username)s/tokens";
+        this.createTokenApi = "/users/%(username)s/tokens/%(name)s";
+        this.graylogUrlApi = graylogUrl + (graylogUrl.endsWith("/") ? "" : "/") + "api";
     }
-    searchRelative(query, range, limit, offset, filter, fields, sort) {
+    listTokens(username) {
+        const options = {
+            url: this.graylogUrlApi + sprintf_js_1.sprintf(this.listTokensApi, { username }),
+            json: true,
+            headers: {
+                Authorization: this.authHeader
+            }
+        };
+        return rp(options);
+    }
+    createToken(username, tokenName) {
+        const options = {
+            method: 'POST',
+            url: this.graylogUrlApi + sprintf_js_1.sprintf(this.createTokenApi, { username, name: tokenName }),
+            json: true,
+            headers: {
+                Authorization: this.authHeader,
+                "X-Requested-By": "graycli"
+            }
+        };
+        return rp(options);
+    }
+    searchRelative(query, range, limit, offset, filter, fields, sort, debug = false) {
         const options = {
             url: this.graylogUrlApi + this.searchRelativeApi,
             qs: {
@@ -25,9 +48,14 @@ class GraylogApi {
             },
             json: true,
             headers: {
-                Authorization: this.basicAuthToken
+                Authorization: this.authHeader
             }
         };
+        if (debug) {
+            console.debug(options.url);
+            console.debug(options.qs);
+            console.debug(options.headers);
+        }
         return rp(options);
     }
     system() {
@@ -35,7 +63,7 @@ class GraylogApi {
             url: this.graylogUrlApi + this.systemApi,
             json: true,
             headers: {
-                Authorization: this.basicAuthToken
+                Authorization: this.authHeader
             }
         };
         return rp(options);
@@ -45,7 +73,7 @@ class GraylogApi {
             url: this.graylogUrlApi + this.streamsApi,
             json: true,
             headers: {
-                Authorization: this.basicAuthToken
+                Authorization: this.authHeader
             }
         };
         return rp(options);
