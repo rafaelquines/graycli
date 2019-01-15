@@ -4,7 +4,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const file_utils_1 = require("./lib/file-utils");
 const commander = require("commander");
 const graycli_1 = require("./graycli");
-const packageObj = file_utils_1.FileUtils.readJsonFile("./package.json");
+let packageObj;
+if (file_utils_1.FileUtils.exists("./package.json")) {
+    packageObj = file_utils_1.FileUtils.readJsonFile("./package.json");
+}
+else {
+    packageObj = file_utils_1.FileUtils.readJsonFile(__dirname + "/../../package.json");
+}
 commander
     .version(packageObj.version, '-v, --version')
     .option('--url <url>', 'Graylog URL')

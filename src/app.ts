@@ -3,8 +3,12 @@ import { UrlUtils } from './lib/url-utils';
 import { FileUtils } from './lib/file-utils';
 import * as commander from 'commander';
 import { GrayCli } from './graycli';
-
-const packageObj = FileUtils.readJsonFile("./package.json");
+let packageObj;
+if (FileUtils.exists("./package.json")) {
+  packageObj = FileUtils.readJsonFile("./package.json");
+} else {
+  packageObj = FileUtils.readJsonFile(__dirname + "/../../package.json");
+}
 commander
   .version(packageObj.version, '-v, --version')
   .option('--url <url>', 'Graylog URL')
