@@ -122,27 +122,32 @@ export class GrayCli {
         mask: '*'
       });
       this.password = passwordAnswer.password;
-      const wantTokenAnswer: any = await inquirer.prompt({
-        name: 'wantToken',
-        type: 'confirm',
-        message: 'Do you want generate a token?'
-      });
-      if (wantTokenAnswer.wantToken) {
-        const graylogApi: GraylogApi = new GraylogApi(this.url, sprintf(this.authHeaderFormat, { token: Buffer.from(this.username + ":" + this.password).toString('base64') }));
-        try {
-          const tokenRes = await graylogApi.createToken(this.username, "graycli");
-          if (tokenRes.token) {
-            console.log("Token successfully generated");
+      const graylogApi: GraylogApi = new GraylogApi(this.url, sprintf(this.authHeaderFormat, { token: Buffer.from(this.username + ":" + this.password).toString('base64') }));
+      const canCreateToken = await graylogApi.permissionsCan(this.username, "users:tokencreate");
+      if (canCreateToken) {
+        const wantTokenAnswer: any = await inquirer.prompt({
+          name: 'wantToken',
+          type: 'confirm',
+          message: 'Do you want generate a token?'
+        });
+        if (wantTokenAnswer.wantToken) {
+          try {
+            const tokenRes = await graylogApi.createToken(this.username, "graycli");
+            if (tokenRes.token) {
+              console.log("Token successfully generated");
+            }
+            this.tokens.push({
+              url: this.url,
+              username: this.username,
+              token: tokenRes.token
+            });
+            FileUtils.writeTokenFile(this.tokenFilename, this.tokens);
+            this.authHeader = sprintf(this.authHeaderFormat, { token: Buffer.from(tokenRes.token + ":token").toString('base64') });
+          } catch (e) {
+            console.log("Could not generate token");
+            this.authHeader = sprintf(this.authHeaderFormat, { token: Buffer.from(this.username + ":" + this.password).toString('base64') });
           }
-          this.tokens.push({
-            url: this.url,
-            username: this.username,
-            token: tokenRes.token
-          });
-          FileUtils.writeTokenFile(this.tokenFilename, this.tokens);
-          this.authHeader = sprintf(this.authHeaderFormat, { token: Buffer.from(tokenRes.token + ":token").toString('base64') });
-        } catch(e) {
-          console.log("Could not generate token");
+        } else {
           this.authHeader = sprintf(this.authHeaderFormat, { token: Buffer.from(this.username + ":" + this.password).toString('base64') });
         }
       } else {
@@ -173,7 +178,7 @@ export class GrayCli {
           return Promise.resolve({ stream: streams.streams[0].id });
         } else {
           const streamList: InquirerListItem[] = streams.streams.map((s) => {
-            return { name: s.title + " (" + s.description + ")", value: s};
+            return { name: s.title + " (" + s.description + ")", value: s };
           });
           return inquirer.prompt({
             name: 'stream',

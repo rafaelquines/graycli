@@ -1,6 +1,6 @@
 {
   "name": "graycli",
-  "version": "0.0.15",
+  "version": "0.0.16",
   "description": "Graycli is a command line internface to query Graylog via the REST API. It tries emulate the \"docker logs -f\" behavior",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",

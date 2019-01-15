@@ -8,6 +8,7 @@ class GraylogApi {
         this.searchRelativeApi = "/search/universal/relative";
         this.systemApi = "/system";
         this.streamsApi = "/streams";
+        this.userInfoApi = "/users/%(username)s";
         this.listTokensApi = "/users/%(username)s/tokens";
         this.createTokenApi = "/users/%(username)s/tokens/%(name)s";
         this.graylogUrlApi = graylogUrl + (graylogUrl.endsWith("/") ? "" : "/") + "api";
@@ -68,9 +69,26 @@ class GraylogApi {
         };
         return rp(options);
     }
+    permissionsCan(username, permission) {
+        return this.userInfo(username)
+            .then((user) => {
+            const permissions = user.permissions;
+            return permissions.some((x) => x.startsWith(permission) || x === '*');
+        });
+    }
     streams() {
         const options = {
             url: this.graylogUrlApi + this.streamsApi,
+            json: true,
+            headers: {
+                Authorization: this.authHeader
+            }
+        };
+        return rp(options);
+    }
+    userInfo(username) {
+        const options = {
+            url: this.graylogUrlApi + sprintf_js_1.sprintf(this.userInfoApi, { username }),
             json: true,
             headers: {
                 Authorization: this.authHeader
