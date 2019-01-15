@@ -25,6 +25,7 @@ export class GrayCli {
   authHeader = '';
   constructor(cmdOptions: CommanderStatic) {
     this.cmdOptions = cmdOptions;
+    FileUtils.createUserDir(this.userDir);
     this.tokens = FileUtils.readTokenFile(this.tokenFilename);
     this.cache = FileUtils.readCacheFile(this.cacheFilename);
   }
