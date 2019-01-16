@@ -13,6 +13,7 @@ const file_utils_1 = require("./lib/file-utils");
 const graylog_api_service_1 = require("./services/graylog-api.service");
 const inquirer = require("inquirer");
 const sprintf_js_1 = require("sprintf-js");
+const chalk = require("chalk");
 class GrayCli {
     constructor(cmdOptions) {
         this.userDir = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'] + '/.graycli';
@@ -238,7 +239,15 @@ class GrayCli {
         this.messageIds = [...this.messageIds, ...diffIds];
         messages.filter((x) => diffIds.includes(x.message._id))
             .forEach(el => {
-            const msg = '[' + el.message.source + '/' + el.message.container_name + '] ' + el.message.message;
+            let msg = '[' + el.message.source + '/' + el.message.container_name + '] ' + el.message.message;
+            msg = msg.replace(" info ", chalk.default.green(" info "));
+            msg = msg.replace(" INFO ", chalk.default.green(" INFO "));
+            msg = msg.replace(" error ", chalk.default.red(" error "));
+            msg = msg.replace(" ERROR ", chalk.default.red(" ERROR "));
+            msg = msg.replace(" debug ", chalk.default.blue(" debug "));
+            msg = msg.replace(" DEBUG ", chalk.default.blue(" DEBUG "));
+            msg = msg.replace(" warn ", chalk.default.yellow(" warn "));
+            msg = msg.replace(" WARN ", chalk.default.yellow(" WARN "));
             if (!filter || msg.indexOf(filter) !== -1) {
                 console.log(msg);
             }
