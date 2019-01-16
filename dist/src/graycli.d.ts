@@ -21,6 +21,7 @@ export declare class GrayCli {
     private validateUrl;
     private validateRequired;
     private validatePassword;
+    private normalizeUrl;
     collectInputs(): Promise<void>;
     start(): void;
     listStreams(graylogApi: GraylogApi): Bluebird<string>;

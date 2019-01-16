@@ -34,7 +34,7 @@ class GrayCli {
         if (this.cmdOptions.debug) {
             console.debug("Calling searchRelative...");
         }
-        graylogApi.searchRelative('*', this.cmdOptions.range, 500, undefined, "streams:" + streamId, '_id,timestamp,container_name,message,source', 'timestamp:asc', this.cmdOptions.debug)
+        graylogApi.searchRelative('*', this.cmdOptions.range, 500, 0, "streams:" + streamId, '_id,timestamp,container_name,message,source', 'timestamp:asc', this.cmdOptions.debug)
             .then((res) => {
             if (this.cmdOptions.debug) {
                 console.debug("Response searchRelative (" + res.messages.length + " messages)");
@@ -68,6 +68,11 @@ class GrayCli {
             });
         }
     }
+    normalizeUrl(url) {
+        url = url.endsWith("/") ? url.substr(0, url.length - 1) : url;
+        url = url.endsWith("/api") ? url.substr(0, url.length - "/api".length) : url;
+        return url;
+    }
     collectInputs() {
         return __awaiter(this, void 0, void 0, function* () {
             this.url = this.cmdOptions.url;
@@ -81,10 +86,10 @@ class GrayCli {
                     validate: (inp) => this.validateUrl(inp),
                     default: this.cache.url
                 });
-                this.url = urlAnswer.url.endsWith("/") ? urlAnswer.url.substr(0, urlAnswer.url.length - 1) : urlAnswer.url;
+                this.url = this.normalizeUrl(urlAnswer.url);
             }
             else {
-                this.url = this.url.endsWith("/") ? this.url.substr(0, this.url.length - 1) : this.url;
+                this.url = this.normalizeUrl(this.url);
                 const urlValid = yield this.validateUrl(this.url);
                 if (urlValid !== true) {
                     this.showError("Invalid Graylog Url");
@@ -107,7 +112,7 @@ class GrayCli {
             this.cache.username = this.username;
             file_utils_1.FileUtils.writeCacheFile(this.cacheFilename, this.cache);
             // Token
-            const token = this.tokens.find((x) => x.username === this.username && x.url === this.url);
+            const token = this.tokens.find((t) => t.username === this.username && t.url === this.url);
             if (!token) {
                 const passwordAnswer = yield inquirer.prompt({
                     name: 'password',
