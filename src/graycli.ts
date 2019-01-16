@@ -9,6 +9,7 @@ import * as inquirer from 'inquirer';
 import { InquirerListItem } from './models/inquirer-list-item';
 import { UserToken } from './models/user-token';
 import { sprintf } from 'sprintf-js';
+import * as chalk from 'chalk';
 
 export class GrayCli {
   private readonly userDir = process.env[(process.platform === 'win32') ? 'USERPROFILE' : 'HOME'] + '/.graycli';
@@ -243,7 +244,15 @@ export class GrayCli {
     this.messageIds = [...this.messageIds, ...diffIds];
     messages.filter((x) => diffIds.includes(x.message._id))
       .forEach(el => {
-        const msg = '[' + el.message.source + '/' + el.message.container_name + '] ' + el.message.message;
+        let msg = '[' + el.message.source + '/' + el.message.container_name + '] ' + el.message.message;
+        msg = msg.replace(" info ", chalk.default.green(" info "));
+        msg = msg.replace(" INFO ", chalk.default.green(" INFO "));
+        msg = msg.replace(" error ", chalk.default.red(" error "));
+        msg = msg.replace(" ERROR ", chalk.default.red(" ERROR "));
+        msg = msg.replace(" debug ", chalk.default.blue(" debug "));
+        msg = msg.replace(" DEBUG ", chalk.default.blue(" DEBUG "));
+        msg = msg.replace(" warn ", chalk.default.yellow(" warn "));
+        msg = msg.replace(" WARN ", chalk.default.yellow(" WARN "));
         if (!filter || msg.indexOf(filter) !== -1) {
           console.log(msg);
         }
