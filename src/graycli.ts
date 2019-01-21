@@ -201,7 +201,6 @@ export class GrayCli {
     return graylogApi.streams()
       .then((streams: Streams) => {
         if (streams.streams.length === 1) {
-          console.log("Monitoring stream " + streams.streams[0].title + "...");
           return Promise.resolve({ stream: streams.streams[0].id + "#:#" + streams.streams[0].title });
         } else {
           const streamList: InquirerListItem[] = streams.streams.map((s) => {
@@ -220,7 +219,7 @@ export class GrayCli {
         const splitStream: string[] = answer.stream.split("#:#");
         const streamId = splitStream[0];
         const title = splitStream[1];
-        console.log("Monitoring stream " + title + "...");
+        console.log("Monitoring stream [" + title + "]...");
         this.cache.stream = answer.stream;
         FileUtils.writeCacheFile(this.cacheFilename, this.cache);
         return Promise.resolve(streamId);
