@@ -3,6 +3,7 @@ import * as Bluebird from 'bluebird';
 export declare class GraylogApi {
     private authHeader;
     private readonly searchRelativeApi;
+    private readonly searchAbsoluteApi;
     private readonly systemApi;
     private readonly streamsApi;
     private readonly userInfoApi;
@@ -12,6 +13,7 @@ export declare class GraylogApi {
     constructor(graylogUrl: string, authHeader: string);
     listTokens(username: string): rp.RequestPromise;
     createToken(username: string, tokenName: string): rp.RequestPromise;
+    searchAbsolute(query: string, from: string, to: string, limit?: number, offset?: number, filter?: string, fields?: string, sort?: string, debug?: boolean): rp.RequestPromise;
     searchRelative(query: string, range: number, limit?: number, offset?: number, filter?: string, fields?: string, sort?: string, debug?: boolean): rp.RequestPromise;
     system(): rp.RequestPromise;
     permissionsCan(username: string, permission: string): Bluebird<boolean>;

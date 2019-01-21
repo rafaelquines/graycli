@@ -14,10 +14,7 @@ Usage
 
 Examples:
 
-    > graycli --api-url http://127.0.0.1:9000/api -u john -p 123456
-    ...
-
-    > graycli --api-host 127.0.0.1 --api-port 9000 --api-path /api --api-protocol http -u john -p 123456
+    > graycli --url http://127.0.0.1:9000 -u john
     ...
 
 graycli usage:
@@ -25,17 +22,11 @@ graycli usage:
     Usage: graycli [options]
 
     Options:
-      -v, --version               output the version number
-      --api-url TEXT              Full Graylog Api URL
-      --api-host TEXT             Graylog API Hostname (default: "127.0.0.1")
-      --api-port INTEGER          Graylog API Port (default: "9000")
-      --api-path TEXT             Graylog API Path (default: "/api/")
-      --api-protocol TEXT         Graylog API Protocol (default: "http")
-      -u, --username TEXT         Graylog API Username
-      -p, --password TEXT         Graylog API Password
-      -i, --interval INTEGER      Polling interval in seconds (default: 3)
-      -r, --range INTEGER         Relative timerange, specified as seconds from now (default: 60)
-      -f, --filter TEXT           Search string
-      -s, --save TEXT             Save config
-      -c, --config TEXT           Load saved config
-      -h, --help                  output usage information
+      -v, --version             output the version number
+      --url url                 Graylog URL
+      -u, --username username   Graylog API Username
+      -i, --interval interval   Polling interval in seconds (default: 3)
+      -r, --range range         Relative timerange, specified as seconds from now (default: 60)
+      -f, --filter filter       Search string
+      -d, --debug               Show debug messages
+      -h, --help                Output usage information

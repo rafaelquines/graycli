@@ -4,6 +4,7 @@ import * as Bluebird from 'bluebird';
 
 export class GraylogApi {
   private readonly searchRelativeApi = "/search/universal/relative";
+  private readonly searchAbsoluteApi = "/search/universal/absolute";
   private readonly systemApi = "/system";
   private readonly streamsApi = "/streams";
   private readonly userInfoApi = "/users/%(username)s";
@@ -39,28 +40,33 @@ export class GraylogApi {
     return rp(options);
   }
 
-  searchRelative(query: string, range: number, limit?: number, offset?: number, filter?: string, fields?: string, sort?: string, debug = false) {
+  searchAbsolute(query: string, from: string, to: string, limit?: number, offset?: number, filter?: string,
+    fields?: string, sort?: string, debug = false) {
     const options: rp.Options = {
-      url: this.graylogUrlApi + this.searchRelativeApi,
+      url: this.graylogUrlApi + this.searchAbsoluteApi,
       qs: {
-        query,
-        range,
-        limit,
-        offset,
-        filter,
-        fields,
-        sort
+        query, from, to, limit, offset, filter, fields, sort
       },
       json: true,
       headers: {
         Authorization: this.authHeader
       }
     };
-    if (debug) {
-      console.debug(options.url);
-      console.debug(options.qs);
-      console.debug(options.headers);
-    }
+    return rp(options);
+  }
+
+  searchRelative(query: string, range: number, limit?: number, offset?: number, filter?: string,
+    fields?: string, sort?: string, debug = false) {
+    const options: rp.Options = {
+      url: this.graylogUrlApi + this.searchRelativeApi,
+      qs: {
+        query, range, limit, offset, filter, fields, sort
+      },
+      json: true,
+      headers: {
+        Authorization: this.authHeader
+      }
+    };
     return rp(options);
   }
 
