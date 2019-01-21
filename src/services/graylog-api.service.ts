@@ -42,23 +42,17 @@ export class GraylogApi {
 
   searchAbsolute(query: string, from: string, to: string, limit?: number, offset?: number, filter?: string,
     fields?: string, sort?: string, debug = false) {
-      const options: rp.Options = {
-        url: this.graylogUrlApi + this.searchAbsoluteApi,
-        qs: {
-          query, from, to, limit, offset, filter, fields, sort
-        },
-        json: true,
-        headers: {
-          Authorization: this.authHeader
-        }
-      };
-      // console.log("OPT FROM: ", options.qs);
-      if (debug) {
-        // console.debug(options.url);
-        // console.debug(options.qs);
-        // console.debug(options.headers);
+    const options: rp.Options = {
+      url: this.graylogUrlApi + this.searchAbsoluteApi,
+      qs: {
+        query, from, to, limit, offset, filter, fields, sort
+      },
+      json: true,
+      headers: {
+        Authorization: this.authHeader
       }
-      return rp(options);
+    };
+    return rp(options);
   }
 
   searchRelative(query: string, range: number, limit?: number, offset?: number, filter?: string,
@@ -73,11 +67,6 @@ export class GraylogApi {
         Authorization: this.authHeader
       }
     };
-    if (debug) {
-      // console.debug(options.url);
-      // console.debug(options.qs);
-      // console.debug(options.headers);
-    }
     return rp(options);
   }
 

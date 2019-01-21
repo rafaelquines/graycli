@@ -1,3 +1,4 @@
+import { FullMessage } from './models/full-message';
 import { UserCache } from './models/user-cache';
 import { GraylogApi } from "./services/graylog-api.service";
 import { CommanderStatic } from "commander";
@@ -8,6 +9,10 @@ export declare class GrayCli {
     private readonly tokenFilename;
     private readonly cacheFilename;
     private readonly authHeaderFormat;
+    private readonly pageSize;
+    private readonly query;
+    private readonly fields;
+    private readonly sort;
     messageIds: string[];
     cmdOptions: any;
     url: string;
@@ -17,7 +22,7 @@ export declare class GrayCli {
     cache: UserCache;
     authHeader: string;
     constructor(cmdOptions: CommanderStatic);
-    private callApi;
+    private getLogs;
     private validateUrl;
     private validateRequired;
     private validatePassword;
@@ -27,5 +32,7 @@ export declare class GrayCli {
     listStreams(graylogApi: GraylogApi): Bluebird<string>;
     private showError;
     showServerInfo(graylogApi: GraylogApi): Bluebird<void>;
-    handleMessages(messages: any[], filter: string): Promise<any>;
+    private showDebug;
+    private removeOldMsgs;
+    handleMessages(messages: FullMessage[]): void;
 }

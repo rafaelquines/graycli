@@ -6,6 +6,7 @@ class GraylogApi {
     constructor(graylogUrl, authHeader) {
         this.authHeader = authHeader;
         this.searchRelativeApi = "/search/universal/relative";
+        this.searchAbsoluteApi = "/search/universal/absolute";
         this.systemApi = "/system";
         this.streamsApi = "/streams";
         this.userInfoApi = "/users/%(username)s";
@@ -35,28 +36,30 @@ class GraylogApi {
         };
         return rp(options);
     }
-    searchRelative(query, range, limit, offset, filter, fields, sort, debug = false) {
+    searchAbsolute(query, from, to, limit, offset, filter, fields, sort, debug = false) {
         const options = {
-            url: this.graylogUrlApi + this.searchRelativeApi,
+            url: this.graylogUrlApi + this.searchAbsoluteApi,
             qs: {
-                query,
-                range,
-                limit,
-                offset,
-                filter,
-                fields,
-                sort
+                query, from, to, limit, offset, filter, fields, sort
             },
             json: true,
             headers: {
                 Authorization: this.authHeader
             }
         };
-        if (debug) {
-            console.debug(options.url);
-            console.debug(options.qs);
-            console.debug(options.headers);
-        }
+        return rp(options);
+    }
+    searchRelative(query, range, limit, offset, filter, fields, sort, debug = false) {
+        const options = {
+            url: this.graylogUrlApi + this.searchRelativeApi,
+            qs: {
+                query, range, limit, offset, filter, fields, sort
+            },
+            json: true,
+            headers: {
+                Authorization: this.authHeader
+            }
+        };
         return rp(options);
     }
     system() {

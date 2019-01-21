@@ -39,29 +39,27 @@ export class GrayCli {
 
   private getLogs(graylogApi: GraylogApi, streamId: string) {
     let resultMessageIds: string[] = [];
-    if (this.cmdOptions.debug) {
-      // console.debug("Calling searchRelative...");
-    }
     const filter = "streams:" + streamId;
+    this.showDebug("Requesting search/relative. Range: " + this.cmdOptions.range);
     return graylogApi.searchRelative(this.query, this.cmdOptions.range, this.pageSize, 0, filter,
       this.fields, this.sort, this.cmdOptions.debug)
       .then(async (res: SearchResult) => {
         try {
-          if (this.cmdOptions.debug) {
-            // console.debug("Response searchRelative (" + res.messages.length + " messages)");
-          }
+          this.showDebug("Response search/relative. Messages: " + res.messages.length);
           resultMessageIds = res.messages.map((item) => item.message._id) as string[];
           this.handleMessages(res.messages);
           const totalCount = res.total_results;
           const nPages: number = Math.ceil(totalCount / this.pageSize) - 1;
-          const promises: any[] = [];
           for (let i = 0; i < nPages; i++) {
+            this.showDebug("Requesting search/absolute. Offset: " + (i + 1) * this.pageSize + " Limit: " + this.pageSize);
             const resLogs: SearchResult = await graylogApi.searchAbsolute(this.query, res.from, res.to, this.pageSize, (i + 1) * this.pageSize, filter,
               this.fields, this.sort, this.cmdOptions.debug);
+            this.showDebug("Response search/absolute. Messages: " + resLogs.messages.length);
             resultMessageIds = [...resultMessageIds, ...resLogs.messages.map((item) => item.message._id) as string[]];
             this.handleMessages(resLogs.messages);
           }
           this.removeOldMsgs(resultMessageIds);
+          this.showDebug("Awaiting " + (this.cmdOptions.interval * 1000) + " seconds.");
           setTimeout(() => {
             this.getLogs(graylogApi, streamId);
           }, this.cmdOptions.interval * 1000);
@@ -199,6 +197,7 @@ export class GrayCli {
   }
 
   listStreams(graylogApi: GraylogApi) {
+    this.showDebug("Listing streams");
     return graylogApi.streams()
       .then((streams: Streams) => {
         if (streams.streams.length === 1) {
@@ -254,11 +253,15 @@ export class GrayCli {
       .catch((err) => this.showError(err));
   }
 
+  private showDebug(msg: string) {
+    if (this.cmdOptions.debug) {
+      console.debug(msg);
+    }
+  }
+
   private removeOldMsgs(lastResult: string[]) {
     const noMoreIds: string[] = this.messageIds.filter((x) => !lastResult.includes(x));
-    if (this.cmdOptions.debug) {
-      console.debug("No more messages: " + noMoreIds.length);
-    }
+    this.showDebug("Removing old messages: " + noMoreIds.length);
     this.messageIds = this.messageIds.filter((x) => !noMoreIds.includes(x));
   }
 
@@ -267,9 +270,7 @@ export class GrayCli {
       return item.message._id;
     }) as string[];
     const diffIds: string[] = msgIds.filter((x) => !this.messageIds.includes(x));
-    if (this.cmdOptions.debug) {
-      console.debug("New messages: " + diffIds.length);
-    }
+    this.showDebug("Found " + diffIds.length + " new messages");
     this.messageIds = [...this.messageIds, ...diffIds];
     messages.filter((x) => diffIds.includes(x.message._id))
       .forEach(el => {
