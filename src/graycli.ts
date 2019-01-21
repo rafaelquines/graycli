@@ -1,3 +1,5 @@
+import { FullMessage } from './models/full-message';
+import { SearchResult } from './models/search-result';
 import { UserCache } from './models/user-cache';
 import { UrlUtils } from './lib/url-utils';
 import { Streams } from './models/streams';
@@ -16,6 +18,10 @@ export class GrayCli {
   private readonly tokenFilename = this.userDir + '/tokens.json';
   private readonly cacheFilename = this.userDir + '/cache.json';
   private readonly authHeaderFormat = "Basic %(token)s";
+  private readonly pageSize = 100;
+  private readonly query = "*";
+  private readonly fields = "_id,timestamp,container_name,message,source";
+  private readonly sort = "timestamp:asc";
   messageIds: string[] = [];
   cmdOptions: any;
   url = '';
@@ -31,22 +37,37 @@ export class GrayCli {
     this.cache = FileUtils.readCacheFile(this.cacheFilename);
   }
 
-  private callApi(graylogApi: GraylogApi, streamId: string) {
+  private getLogs(graylogApi: GraylogApi, streamId: string) {
+    let resultMessageIds: string[] = [];
     if (this.cmdOptions.debug) {
-      console.debug("Calling searchRelative...");
+      // console.debug("Calling searchRelative...");
     }
-    graylogApi.searchRelative('*', this.cmdOptions.range, 500, 0, "streams:" + streamId, '_id,timestamp,container_name,message,source',
-      'timestamp:asc', this.cmdOptions.debug)
-      .then((res) => {
-        if (this.cmdOptions.debug) {
-          console.debug("Response searchRelative (" + res.messages.length + " messages)");
+    const filter = "streams:" + streamId;
+    return graylogApi.searchRelative(this.query, this.cmdOptions.range, this.pageSize, 0, filter,
+      this.fields, this.sort, this.cmdOptions.debug)
+      .then(async (res: SearchResult) => {
+        try {
+          if (this.cmdOptions.debug) {
+            // console.debug("Response searchRelative (" + res.messages.length + " messages)");
+          }
+          resultMessageIds = res.messages.map((item) => item.message._id) as string[];
+          this.handleMessages(res.messages);
+          const totalCount = res.total_results;
+          const nPages: number = Math.ceil(totalCount / this.pageSize) - 1;
+          const promises: any[] = [];
+          for (let i = 0; i < nPages; i++) {
+            const resLogs: SearchResult = await graylogApi.searchAbsolute(this.query, res.from, res.to, this.pageSize, (i + 1) * this.pageSize, filter,
+              this.fields, this.sort, this.cmdOptions.debug);
+            resultMessageIds = [...resultMessageIds, ...resLogs.messages.map((item) => item.message._id) as string[]];
+            this.handleMessages(resLogs.messages);
+          }
+          this.removeOldMsgs(resultMessageIds);
+          setTimeout(() => {
+            this.getLogs(graylogApi, streamId);
+          }, this.cmdOptions.interval * 1000);
+        } catch (e) {
+          this.showError(e);
         }
-        return this.handleMessages(res.messages, this.cmdOptions.filter);
-      })
-      .then(() => {
-        setTimeout(() => {
-          this.callApi(graylogApi, streamId);
-        }, this.cmdOptions.interval * 1000);
       })
       .catch((err) => this.showError(err));
   }
@@ -135,7 +156,7 @@ export class GrayCli {
         const wantTokenAnswer: any = await inquirer.prompt({
           name: 'wantToken',
           type: 'confirm',
-          message: 'Do you want generate a token?'
+          message: 'Do you want to generate a token?'
         });
         if (wantTokenAnswer.wantToken) {
           try {
@@ -151,7 +172,7 @@ export class GrayCli {
             FileUtils.writeTokenFile(this.tokenFilename, this.tokens);
             this.authHeader = sprintf(this.authHeaderFormat, { token: Buffer.from(tokenRes.token + ":token").toString('base64') });
           } catch (e) {
-            console.log("Could not generate token");
+            console.log("Could not to generate token");
             this.authHeader = sprintf(this.authHeaderFormat, { token: Buffer.from(this.username + ":" + this.password).toString('base64') });
           }
         } else {
@@ -173,7 +194,7 @@ export class GrayCli {
         return this.listStreams(graylogApi);
       })
       .then((streamId: string) => {
-        this.callApi(graylogApi, streamId);
+        this.getLogs(graylogApi, streamId);
       });
   }
 
@@ -233,7 +254,15 @@ export class GrayCli {
       .catch((err) => this.showError(err));
   }
 
-  handleMessages(messages: any[], filter: string): Promise<any> {
+  private removeOldMsgs(lastResult: string[]) {
+    const noMoreIds: string[] = this.messageIds.filter((x) => !lastResult.includes(x));
+    if (this.cmdOptions.debug) {
+      console.debug("No more messages: " + noMoreIds.length);
+    }
+    this.messageIds = this.messageIds.filter((x) => !noMoreIds.includes(x));
+  }
+
+  handleMessages(messages: FullMessage[]) {
     const msgIds = messages.map((item) => {
       return item.message._id;
     }) as string[];
@@ -253,11 +282,9 @@ export class GrayCli {
         msg = msg.replace(" DEBUG ", chalk.default.blue(" DEBUG "));
         msg = msg.replace(" warn ", chalk.default.yellow(" warn "));
         msg = msg.replace(" WARN ", chalk.default.yellow(" WARN "));
-        if (!filter || msg.indexOf(filter) !== -1) {
+        if (!this.cmdOptions.filter || msg.indexOf(this.cmdOptions.filter) !== -1) {
           console.log(msg);
         }
       });
-    return Promise.resolve();
   }
-
 }
