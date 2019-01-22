@@ -12,7 +12,7 @@ $ npm install -g graycli
 Usage
 =====
 
-![Usage](https://media.giphy.com/media/1jXzYLoQc2xZvF0oCJ/giphy.gif)
+![Usage](https://media.giphy.com/media/2vmjOC8G99RCBNadPN/giphy.gif)
 
 Examples:
 
