@@ -12,6 +12,8 @@ $ npm install -g graycli
 Usage
 =====
 
+![Usage](https://media.giphy.com/media/1jXzYLoQc2xZvF0oCJ/giphy.gif)
+
 Examples:
 
     > graycli --url http://127.0.0.1:9000 -u john
