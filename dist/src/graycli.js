@@ -81,8 +81,13 @@ class GrayCli {
             return Promise.resolve(graylogApi.system())
                 .then(() => {
                 return true;
-            }).catch(() => {
-                return "Invalid username or password";
+            }).catch((err) => {
+                if (err.error) {
+                    return "Error: " + err.error;
+                }
+                else {
+                    return "Invalid username or password";
+                }
             });
         }
     }
