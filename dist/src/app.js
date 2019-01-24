@@ -17,9 +17,10 @@ else {
 const currentVersion = packageObj.version;
 exec('npm view ' + packageObj.name + ' version')
     .then((out) => {
-    const npmRepoVersion = out.stdout.replace(/\r?\n|\r/g, " ");
+    const npmRepoVersion = out.stdout.replace(/\r?\n|\r/g, "");
     try {
         if (currentVersion !== npmRepoVersion) {
+            console.log();
             console.log(chalk.default.bold("WARNING"));
             console.log("Update available " + chalk.default.gray(currentVersion) + " => " + chalk.default.green(npmRepoVersion));
             console.log("Run " + chalk.default.cyan("npm i -g " + packageObj.name) + " to update");
