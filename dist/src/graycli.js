@@ -28,7 +28,7 @@ class GrayCli {
         this.url = '';
         this.username = '';
         this.password = '';
-        this.cache = {};
+        this.cache = [];
         this.authHeader = '';
         this.cmdOptions = cmdOptions;
         file_utils_1.FileUtils.createUserDir(this.userDir);
@@ -97,14 +97,36 @@ class GrayCli {
             this.username = this.cmdOptions.username;
             // URL
             if (!this.url) {
-                const urlAnswer = yield inquirer.prompt({
-                    name: "url",
-                    type: "input",
-                    message: "Graylog URL:",
-                    validate: (inp) => this.validateUrl(inp),
-                    default: this.cache.url
-                });
-                this.url = this.normalizeUrl(urlAnswer.url);
+                if (this.cache.length <= 1) {
+                    const urlAnswer = yield inquirer.prompt({
+                        name: "url",
+                        type: "input",
+                        message: "Graylog URL:",
+                        validate: (inp) => this.validateUrl(inp),
+                        default: this.cache.length === 1 ? this.cache[0].url : undefined
+                    });
+                    this.url = this.normalizeUrl(urlAnswer.url);
+                }
+                else {
+                    const serverList = this.cache.map(item => item.url)
+                        .filter((value, index, self) => self.indexOf(value) === index);
+                    serverList.push("New URL");
+                    let urlAnswer = yield inquirer.prompt({
+                        name: 'url',
+                        type: 'list',
+                        choices: serverList,
+                        message: 'Select Graylog URL:',
+                    });
+                    if (urlAnswer.url.indexOf("New") >= 0) {
+                        urlAnswer = yield inquirer.prompt({
+                            name: "url",
+                            type: "input",
+                            message: "Graylog URL:",
+                            validate: (inp) => this.validateUrl(inp)
+                        });
+                    }
+                    this.url = this.normalizeUrl(urlAnswer.url);
+                }
             }
             else {
                 this.url = this.normalizeUrl(this.url);
@@ -113,22 +135,40 @@ class GrayCli {
                     this.showError("Invalid Graylog Url");
                 }
             }
-            this.cache.url = this.url;
-            file_utils_1.FileUtils.writeCacheFile(this.cacheFilename, this.cache);
             // Username
             if (!this.username) {
-                const usernameAnswer = yield inquirer.prompt({
-                    name: "username",
-                    type: "input",
-                    message: "Username:",
-                    validate: (inp) => this.validateRequired(inp),
-                    default: this.cache.username
-                });
-                this.username = usernameAnswer.username;
-                this.cache.username = this.username;
+                const users = this.cache.filter((item) => item.url === this.url);
+                if (users.length <= 1) {
+                    const usernameAnswer = yield inquirer.prompt({
+                        name: "username",
+                        type: "input",
+                        message: "Username:",
+                        validate: (inp) => this.validateRequired(inp),
+                        default: users.length === 1 ? users[0].username : undefined
+                    });
+                    this.username = usernameAnswer.username;
+                }
+                else {
+                    const userList = users.map((item) => item.username)
+                        .filter((value, index, self) => self.indexOf(value) === index);
+                    userList.push("New Username");
+                    let usernameAnswer = yield inquirer.prompt({
+                        name: 'username',
+                        type: 'list',
+                        choices: userList,
+                        message: 'Select Username:',
+                    });
+                    if (usernameAnswer.username.indexOf("New") >= 0) {
+                        usernameAnswer = yield inquirer.prompt({
+                            name: "username",
+                            type: "input",
+                            message: "Username:",
+                            validate: (inp) => this.validateRequired(inp)
+                        });
+                    }
+                    this.username = usernameAnswer.username;
+                }
             }
-            this.cache.username = this.username;
-            file_utils_1.FileUtils.writeCacheFile(this.cacheFilename, this.cache);
             // Token
             const token = this.tokens.find((t) => t.username === this.username && t.url === this.url);
             if (!token) {
@@ -191,6 +231,21 @@ class GrayCli {
             this.getLogs(graylogApi, streamId);
         });
     }
+    updateCache(selectedStream) {
+        const streamsCache = this.cache.filter((item) => item.url === this.url && item.username === this.username);
+        if (streamsCache.length === 0) {
+            this.cache.push({
+                url: this.url,
+                username: this.username,
+                stream: selectedStream
+            });
+        }
+        else if (streamsCache.length === 1) {
+            const streamCache = streamsCache[0];
+            streamCache.stream = selectedStream;
+        }
+        file_utils_1.FileUtils.writeCacheFile(this.cacheFilename, this.cache);
+    }
     listStreams(graylogApi) {
         this.showDebug("Listing streams");
         return graylogApi.streams()
@@ -199,6 +254,7 @@ class GrayCli {
                 return Promise.resolve({ stream: streams.streams[0].id + "#:#" + streams.streams[0].title });
             }
             else {
+                const streamCache = this.cache.find((item) => item.url === this.url && item.username === this.username);
                 const streamList = streams.streams.map((s) => {
                     return { name: s.title + " (" + s.description + ")", value: s.id + "#:#" + s.title };
                 });
@@ -207,7 +263,7 @@ class GrayCli {
                     type: 'list',
                     choices: streamList,
                     message: 'Select stream:',
-                    default: this.cache.stream
+                    default: streamCache ? streamCache.stream : undefined
                 });
             }
         })
@@ -215,9 +271,8 @@ class GrayCli {
             const splitStream = answer.stream.split("#:#");
             const streamId = splitStream[0];
             const title = splitStream[1];
+            this.updateCache(answer.stream);
             console.log("Monitoring stream [" + title + "]...");
-            this.cache.stream = answer.stream;
-            file_utils_1.FileUtils.writeCacheFile(this.cacheFilename, this.cache);
             return Promise.resolve(streamId);
         })
             .catch((err) => {
@@ -228,22 +283,6 @@ class GrayCli {
     showError(err) {
         console.log("Error: " + err);
         process.exit(1);
-    }
-    showServerInfo(graylogApi) {
-        return graylogApi.system()
-            .then((serverInfo) => {
-            console.log("Graylog Server Info:");
-            console.log("    Hostname: " + serverInfo.hostname);
-            console.log("    Version: " + serverInfo.version);
-            console.log("    OS: " + serverInfo.operating_system);
-            console.log("    Status: " + serverInfo.lb_status);
-            console.log("    Start At: " + serverInfo.started_at);
-            console.log("    Cluster Id: " + serverInfo.cluster_id);
-            console.log("    Node Id: " + serverInfo.node_id);
-            console.log("--------------------------------------------------------------");
-            return Promise.resolve();
-        })
-            .catch((err) => this.showError(err));
     }
     showDebug(msg) {
         if (this.cmdOptions.debug) {

@@ -22,10 +22,17 @@ class FileUtils {
     }
     static readCacheFile(path) {
         if (!FileUtils.exists(path)) {
-            FileUtils.writeCacheFile(path, {});
+            FileUtils.writeCacheFile(path, []);
         }
         const rawdata = fs.readFileSync(path);
-        return JSON.parse(rawdata.toString());
+        const content = JSON.parse(rawdata.toString());
+        const ret = [];
+        if (!Array.isArray(content)) {
+            ret.push(content);
+            FileUtils.writeCacheFile(path, ret);
+            return ret;
+        }
+        return content;
     }
     static readTokenFile(path) {
         if (!FileUtils.exists(path)) {

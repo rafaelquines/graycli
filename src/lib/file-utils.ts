@@ -12,7 +12,7 @@ export class FileUtils {
     fs.writeFileSync(path, JSON.stringify(tokens, undefined, 2));
   }
 
-  static writeCacheFile(path: string, cache: UserCache) {
+  static writeCacheFile(path: string, cache: UserCache[]) {
     fs.writeFileSync(path, JSON.stringify(cache, undefined, 2));
   }
 
@@ -28,10 +28,17 @@ export class FileUtils {
 
   static readCacheFile(path: string) {
     if (!FileUtils.exists(path)) {
-      FileUtils.writeCacheFile(path, {});
+      FileUtils.writeCacheFile(path, []);
     }
     const rawdata = fs.readFileSync(path);
-    return JSON.parse(rawdata.toString()) as UserCache;
+    const content = JSON.parse(rawdata.toString());
+    const ret = [];
+    if(!Array.isArray(content)) {
+      ret.push(content);
+      FileUtils.writeCacheFile(path, ret);
+      return ret as UserCache[];
+    }
+    return content as UserCache[];
   }
 
   static readTokenFile(path: string) {

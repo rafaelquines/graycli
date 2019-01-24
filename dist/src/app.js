@@ -4,7 +4,6 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const file_utils_1 = require("./lib/file-utils");
 const commander = require("commander");
 const graycli_1 = require("./graycli");
-const semver = require("semver");
 const util = require("util");
 const chalk = require("chalk");
 const exec = util.promisify(require('child_process').exec);
@@ -20,7 +19,7 @@ exec('npm view ' + packageObj.name + ' version')
     .then((out) => {
     const npmRepoVersion = out.stdout.replace(/\r?\n|\r/g, " ");
     try {
-        if (semver.diff(currentVersion, npmRepoVersion)) {
+        if (currentVersion !== npmRepoVersion) {
             console.log(chalk.default.bold("WARNING"));
             console.log("Update available " + chalk.default.gray(currentVersion) + " => " + chalk.default.green(npmRepoVersion));
             console.log("Run " + chalk.default.cyan("npm i -g " + packageObj.name) + " to update");

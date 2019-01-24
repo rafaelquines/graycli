@@ -19,7 +19,7 @@ export declare class GrayCli {
     username: string;
     password: string;
     tokens: UserToken[];
-    cache: UserCache;
+    cache: UserCache[];
     authHeader: string;
     constructor(cmdOptions: CommanderStatic);
     private getLogs;
@@ -29,9 +29,9 @@ export declare class GrayCli {
     private normalizeUrl;
     collectInputs(): Promise<void>;
     start(): void;
+    updateCache(selectedStream: string): void;
     listStreams(graylogApi: GraylogApi): Bluebird<string>;
     private showError;
-    showServerInfo(graylogApi: GraylogApi): Bluebird<void>;
     private showDebug;
     private removeOldMsgs;
     handleMessages(messages: FullMessage[]): void;

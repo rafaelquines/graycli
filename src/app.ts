@@ -1,9 +1,7 @@
 #!/usr/bin/env node
-import { UrlUtils } from './lib/url-utils';
 import { FileUtils } from './lib/file-utils';
 import * as commander from 'commander';
 import { GrayCli } from './graycli';
-import * as semver from 'semver';
 import * as util from 'util';
 import * as chalk from 'chalk';
 
@@ -19,7 +17,7 @@ exec('npm view ' + packageObj.name + ' version')
   .then((out: any) => {
     const npmRepoVersion = out.stdout.replace(/\r?\n|\r/g, " ");
     try {
-      if (semver.diff(currentVersion, npmRepoVersion)) {
+      if (currentVersion !== npmRepoVersion) {
         console.log(chalk.default.bold("WARNING"));
         console.log("Update available " + chalk.default.gray(currentVersion) + " => " + chalk.default.green(npmRepoVersion));
         console.log("Run " + chalk.default.cyan("npm i -g " + packageObj.name) + " to update");

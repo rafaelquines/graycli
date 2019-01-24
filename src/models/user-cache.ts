@@ -1,5 +1,5 @@
 export interface UserCache {
-  url?: string;
-  username?: string;
-  stream?: any;
+  url: string;
+  username: string;
+  stream: any;
 }

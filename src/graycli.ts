@@ -28,7 +28,7 @@ export class GrayCli {
   username = '';
   password = '';
   tokens: UserToken[];
-  cache: UserCache = {};
+  cache: UserCache[] = [];
   authHeader = '';
   constructor(cmdOptions: CommanderStatic) {
     this.cmdOptions = cmdOptions;
@@ -104,14 +104,35 @@ export class GrayCli {
 
     // URL
     if (!this.url) {
-      const urlAnswer: any = await inquirer.prompt({
-        name: "url",
-        type: "input",
-        message: "Graylog URL:",
-        validate: (inp) => this.validateUrl(inp),
-        default: this.cache.url
-      });
-      this.url = this.normalizeUrl(urlAnswer.url);
+      if (this.cache.length <= 1) {
+        const urlAnswer: any = await inquirer.prompt({
+          name: "url",
+          type: "input",
+          message: "Graylog URL:",
+          validate: (inp) => this.validateUrl(inp),
+          default: this.cache.length === 1 ? this.cache[0].url : undefined
+        });
+        this.url = this.normalizeUrl(urlAnswer.url);
+      } else {
+        const serverList = this.cache.map(item => item.url)
+          .filter((value, index, self) => self.indexOf(value) === index);
+        serverList.push("New URL");
+        let urlAnswer: any = await inquirer.prompt({
+          name: 'url',
+          type: 'list',
+          choices: serverList,
+          message: 'Select Graylog URL:',
+        });
+        if (urlAnswer.url.indexOf("New") >= 0) {
+          urlAnswer = await inquirer.prompt({
+            name: "url",
+            type: "input",
+            message: "Graylog URL:",
+            validate: (inp) => this.validateUrl(inp)
+          });
+        }
+        this.url = this.normalizeUrl(urlAnswer.url);
+      }
     } else {
       this.url = this.normalizeUrl(this.url);
       const urlValid = await this.validateUrl(this.url);
@@ -119,23 +140,40 @@ export class GrayCli {
         this.showError("Invalid Graylog Url");
       }
     }
-    this.cache.url = this.url;
-    FileUtils.writeCacheFile(this.cacheFilename, this.cache);
 
     // Username
     if (!this.username) {
-      const usernameAnswer: any = await inquirer.prompt({
-        name: "username",
-        type: "input",
-        message: "Username:",
-        validate: (inp) => this.validateRequired(inp),
-        default: this.cache.username
-      });
-      this.username = usernameAnswer.username;
-      this.cache.username = this.username;
+      const users = this.cache.filter((item) => item.url === this.url);
+      if (users.length <= 1) {
+        const usernameAnswer: any = await inquirer.prompt({
+          name: "username",
+          type: "input",
+          message: "Username:",
+          validate: (inp) => this.validateRequired(inp),
+          default: users.length === 1 ? users[0].username : undefined
+        });
+        this.username = usernameAnswer.username;
+      } else {
+        const userList = users.map((item) => item.username)
+          .filter((value, index, self) => self.indexOf(value) === index);
+        userList.push("New Username");
+        let usernameAnswer: any = await inquirer.prompt({
+          name: 'username',
+          type: 'list',
+          choices: userList,
+          message: 'Select Username:',
+        });
+        if (usernameAnswer.username.indexOf("New") >= 0) {
+          usernameAnswer = await inquirer.prompt({
+            name: "username",
+            type: "input",
+            message: "Username:",
+            validate: (inp) => this.validateRequired(inp)
+          });
+        }
+        this.username = usernameAnswer.username;
+      }
     }
-    this.cache.username = this.username;
-    FileUtils.writeCacheFile(this.cacheFilename, this.cache);
 
     // Token
     const token = this.tokens.find((t) => t.username === this.username && t.url === this.url);
@@ -196,6 +234,21 @@ export class GrayCli {
       });
   }
 
+  updateCache(selectedStream: string) {
+    const streamsCache = this.cache.filter((item) => item.url === this.url && item.username === this.username);
+    if(streamsCache.length === 0) {
+      this.cache.push({
+        url: this.url,
+        username: this.username,
+        stream: selectedStream
+      });
+    } else if(streamsCache.length === 1) {
+      const streamCache = streamsCache[0];
+      streamCache.stream = selectedStream;
+    }
+    FileUtils.writeCacheFile(this.cacheFilename, this.cache);
+  }
+
   listStreams(graylogApi: GraylogApi) {
     this.showDebug("Listing streams");
     return graylogApi.streams()
@@ -203,6 +256,7 @@ export class GrayCli {
         if (streams.streams.length === 1) {
           return Promise.resolve({ stream: streams.streams[0].id + "#:#" + streams.streams[0].title });
         } else {
+          const streamCache = this.cache.find((item) => item.url === this.url && item.username === this.username) as UserCache;
           const streamList: InquirerListItem[] = streams.streams.map((s) => {
             return { name: s.title + " (" + s.description + ")", value: s.id + "#:#" + s.title };
           });
@@ -211,7 +265,7 @@ export class GrayCli {
             type: 'list',
             choices: streamList,
             message: 'Select stream:',
-            default: this.cache.stream
+            default: streamCache ? streamCache.stream : undefined
           });
         }
       })
@@ -219,9 +273,8 @@ export class GrayCli {
         const splitStream: string[] = answer.stream.split("#:#");
         const streamId = splitStream[0];
         const title = splitStream[1];
+        this.updateCache(answer.stream);
         console.log("Monitoring stream [" + title + "]...");
-        this.cache.stream = answer.stream;
-        FileUtils.writeCacheFile(this.cacheFilename, this.cache);
         return Promise.resolve(streamId);
       })
       .catch((err) => {
@@ -233,23 +286,6 @@ export class GrayCli {
   private showError(err: any) {
     console.log("Error: " + err);
     process.exit(1);
-  }
-
-  showServerInfo(graylogApi: GraylogApi) {
-    return graylogApi.system()
-      .then((serverInfo) => {
-        console.log("Graylog Server Info:");
-        console.log("    Hostname: " + serverInfo.hostname);
-        console.log("    Version: " + serverInfo.version);
-        console.log("    OS: " + serverInfo.operating_system);
-        console.log("    Status: " + serverInfo.lb_status);
-        console.log("    Start At: " + serverInfo.started_at);
-        console.log("    Cluster Id: " + serverInfo.cluster_id);
-        console.log("    Node Id: " + serverInfo.node_id);
-        console.log("--------------------------------------------------------------");
-        return Promise.resolve();
-      })
-      .catch((err) => this.showError(err));
   }
 
   private showDebug(msg: string) {

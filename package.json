@@ -1,6 +1,6 @@
 {
   "name": "graycli",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Graycli is a command line internface to query Graylog via the REST API. It tries emulate the \"docker logs -f\" behavior",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -22,7 +22,8 @@
     "docker",
     "container",
     "api",
-    "rest"
+    "rest",
+    "logs"
   ],
   "preferGlobal": true,
   "bin": "./dist/src/app.js",
@@ -44,7 +45,6 @@
     "@types/inquirer": "0.0.43",
     "@types/node": "^10.12.18",
     "@types/request-promise": "^4.1.42",
-    "@types/semver": "^5.5.0",
     "@types/sprintf-js": "^1.1.1",
     "gts": "^0.9.0",
     "nodemon": "^1.18.9",
@@ -59,7 +59,6 @@
     "inquirer": "^6.2.1",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
-    "semver": "^5.6.0",
     "sprintf-js": "^1.1.2"
   }
 }
