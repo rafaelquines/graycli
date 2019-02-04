@@ -8,7 +8,6 @@ const util = require("util");
 const chalk = require("chalk");
 const exec = util.promisify(require('child_process').exec);
 const packageObj = file_utils_1.FileUtils.readJsonFile(__dirname + "/../../package.json");
-console.log(packageObj);
 const currentVersion = packageObj.version;
 exec('npm view ' + packageObj.name + ' version')
     .then((out) => {
