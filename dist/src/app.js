@@ -7,13 +7,8 @@ const graycli_1 = require("./graycli");
 const util = require("util");
 const chalk = require("chalk");
 const exec = util.promisify(require('child_process').exec);
-let packageObj;
-if (file_utils_1.FileUtils.exists("./package.json")) {
-    packageObj = file_utils_1.FileUtils.readJsonFile("./package.json");
-}
-else {
-    packageObj = file_utils_1.FileUtils.readJsonFile(__dirname + "/../../package.json");
-}
+const packageObj = file_utils_1.FileUtils.readJsonFile(__dirname + "/../../package.json");
+console.log(packageObj);
 const currentVersion = packageObj.version;
 exec('npm view ' + packageObj.name + ' version')
     .then((out) => {

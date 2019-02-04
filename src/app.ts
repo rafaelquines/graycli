@@ -6,12 +6,7 @@ import * as util from 'util';
 import * as chalk from 'chalk';
 
 const exec = util.promisify(require('child_process').exec);
-let packageObj: any;
-if (FileUtils.exists("./package.json")) {
-  packageObj = FileUtils.readJsonFile("./package.json");
-} else {
-  packageObj = FileUtils.readJsonFile(__dirname + "/../../package.json");
-}
+const packageObj = FileUtils.readJsonFile(__dirname + "/../../package.json");
 const currentVersion = packageObj.version;
 exec('npm view ' + packageObj.name + ' version')
   .then((out: any) => {
