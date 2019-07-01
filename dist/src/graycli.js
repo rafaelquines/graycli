@@ -21,7 +21,6 @@ class GrayCli {
         this.cacheFilename = this.userDir + '/cache.json';
         this.authHeaderFormat = "Basic %(token)s";
         this.pageSize = 100;
-        this.query = "*";
         this.fields = "_id,timestamp,container_name,message,source";
         this.sort = "timestamp:asc";
         this.messageIds = [];
@@ -39,7 +38,7 @@ class GrayCli {
         let resultMessageIds = [];
         const filter = "streams:" + streamId;
         this.showDebug("Requesting search/relative. Range: " + this.cmdOptions.range);
-        return graylogApi.searchRelative(this.query, this.cmdOptions.range, this.pageSize, 0, filter, this.fields, this.sort, this.cmdOptions.debug)
+        return graylogApi.searchRelative(this.cmdOptions.query, this.cmdOptions.range, this.pageSize, 0, filter, this.fields, this.sort, this.cmdOptions.debug)
             .then((res) => __awaiter(this, void 0, void 0, function* () {
             try {
                 this.showDebug("Response search/relative. Messages: " + res.messages.length);
@@ -49,7 +48,7 @@ class GrayCli {
                 const nPages = Math.ceil(totalCount / this.pageSize) - 1;
                 for (let i = 0; i < nPages; i++) {
                     this.showDebug("Requesting search/absolute. Offset: " + (i + 1) * this.pageSize + " Limit: " + this.pageSize);
-                    const resLogs = yield graylogApi.searchAbsolute(this.query, res.from, res.to, this.pageSize, (i + 1) * this.pageSize, filter, this.fields, this.sort, this.cmdOptions.debug);
+                    const resLogs = yield graylogApi.searchAbsolute(this.cmdOptions.query, res.from, res.to, this.pageSize, (i + 1) * this.pageSize, filter, this.fields, this.sort, this.cmdOptions.debug);
                     this.showDebug("Response search/absolute. Messages: " + resLogs.messages.length);
                     resultMessageIds = [...resultMessageIds, ...resLogs.messages.map((item) => item.message._id)];
                     this.handleMessages(resLogs.messages);
