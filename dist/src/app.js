@@ -28,7 +28,8 @@ exec('npm view ' + packageObj.name + ' version')
         .option('-u, --username <username>', 'Graylog Username')
         .option('-i, --interval <interval>', 'Polling interval in seconds', 3)
         .option('-r, --range <range>', 'Relative timerange, specified as seconds from now', 60)
-        .option('-f, --filter <filter>', 'Search string')
+        .option('-f, --filter <filter>', 'Filter string')
+        .option('-q, --query <query>', 'Query search string', '*')
         .option('-d, --debug', 'View debug messages')
         .parse(process.argv);
     const grayCli = new graycli_1.GrayCli(commander);

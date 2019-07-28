@@ -19,7 +19,6 @@ export class GrayCli {
   private readonly cacheFilename = this.userDir + '/cache.json';
   private readonly authHeaderFormat = "Basic %(token)s";
   private readonly pageSize = 100;
-  private readonly query = "*";
   private readonly fields = "_id,timestamp,container_name,message,source";
   private readonly sort = "timestamp:asc";
   messageIds: string[] = [];
@@ -41,7 +40,7 @@ export class GrayCli {
     let resultMessageIds: string[] = [];
     const filter = "streams:" + streamId;
     this.showDebug("Requesting search/relative. Range: " + this.cmdOptions.range);
-    return graylogApi.searchRelative(this.query, this.cmdOptions.range, this.pageSize, 0, filter,
+    return graylogApi.searchRelative(this.cmdOptions.query, this.cmdOptions.range, this.pageSize, 0, filter,
       this.fields, this.sort, this.cmdOptions.debug)
       .then(async (res: SearchResult) => {
         try {
@@ -52,7 +51,7 @@ export class GrayCli {
           const nPages: number = Math.ceil(totalCount / this.pageSize) - 1;
           for (let i = 0; i < nPages; i++) {
             this.showDebug("Requesting search/absolute. Offset: " + (i + 1) * this.pageSize + " Limit: " + this.pageSize);
-            const resLogs: SearchResult = await graylogApi.searchAbsolute(this.query, res.from, res.to, this.pageSize, (i + 1) * this.pageSize, filter,
+            const resLogs: SearchResult = await graylogApi.searchAbsolute(this.cmdOptions.query, res.from, res.to, this.pageSize, (i + 1) * this.pageSize, filter,
               this.fields, this.sort, this.cmdOptions.debug);
             this.showDebug("Response search/absolute. Messages: " + resLogs.messages.length);
             resultMessageIds = [...resultMessageIds, ...resLogs.messages.map((item) => item.message._id) as string[]];

@@ -10,7 +10,6 @@ export declare class GrayCli {
     private readonly cacheFilename;
     private readonly authHeaderFormat;
     private readonly pageSize;
-    private readonly query;
     private readonly fields;
     private readonly sort;
     messageIds: string[];
